@@ -1,86 +1,34 @@
-; Program template
-; Author:
-; Date:
-; Program Description: 
-
-include Irvine32.inc
+include irvine32.inc
 
 .data
-    msgTitle        BYTE    "Welcome to Bank Account checker!", 0
-    msgDeposits     BYTE    "Enter deposits (max 24 - enter -1 to finish)", 0
-    depositPrompt   BYTE    "Deposit: ", 0
-    msgWithdraws    BYTE    "Enter withdrawals (max 24 - enter -1 to finish)", 0
-    withdrawPrompt  BYTE    "Withdrawal: ", 0 
-    msgBalance      BYTE    "Your balance is: ", 0
-    initialBal      WORD    0
-    dailyDeposits   WORD    24 DUP(0)
-    dailyWithdraws  WORD    24 DUP(0)
-    finalBal        WORD    0
+    msgTitle            BYTE        "Welcome to Balance Checker!", 0
+    balanceTitle        BYTE        "Your balance is: ", 0
+    initialBal          WORD        100
+    deposits            WORD        150, 100, 450
+    withdrawals         WORD        100, 50
+    finalBal            WORD        0
 
 .code
 main proc
-    mov edx, OFFSET msgTitle
-    call WriteString 
+    mov EDX, OFFSET msgTitle
+    call WriteString
     call Crlf
-   
-    ; deposits 
-    Deposit: 
-        mov edx, OFFSET msgDeposits
-        call WriteString
-        call Crlf
-        
-        mov ecx, 24
-    DepositLoop:
-        mov edx, OFFSET depositPrompt 
-        call WriteString
-        call ReadInt
-        cmp eax, -1
-        je Withdraw
-        mov ebx, ecx
-        sub ebx, 24
-        mov [dailyWithdraws + ebx], ax
-        loop DepositLoop
     
-    ; withdrawals
-    Withdraw:
-        mov edx, OFFSET msgWithdraws
-        call WriteString
-        call Crlf
-        
-        mov ecx, 24
-    WithdrawLoop:
-        mov edx, OFFSET withdrawPrompt
-        call WriteString
-        call ReadInt
-        cmp eax, -1
-        je DisplayBalance
-        mov ebx, ecx
-        sub ebx, 24
-        mov [dailyWithdraws + TYPE WORD], ax
-        loop WithdrawLoop
-               
-    mov ecx, 24
-        
+    mov ECX, LENGTHOF deposits
+    mov EAX, 0
+    mov ESI, OFFSET deposits
     AddDeposits:
-        mov eax, 0        
-        mov ax, initialBal
-        mov ebx, ecx
-        sub ebx, 24
-        cmp ebx, 0
-        je DisplayBalance
-        add ax, [dailyDeposits + TYPE WORD]
+        add EAX, [ESI]
+        add ESI, TYPE WORD
         loop AddDeposits
-   
-    DisplayBalance:
-        mov finalBal, ax
-        mov edx, OFFSET msgBalance
-        call WriteString
-        call WriteDec
-        call Crlf 
-        call WaitMsg
-        
-        
 
+    mov finalBal, AX
+    mov EDX, OFFSET balanceTitle
+    call WriteString
+    call Write Dec
+    call Crlf
+    call WaitMsg
+    
     exit
-main endp					; ends main process
-end main
+    end mainp
+main end
