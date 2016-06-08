@@ -13,8 +13,8 @@ include Irvine32.inc
     withdrawPrompt  BYTE    "Withdrawal: ", 0 
     msgBalance      BYTE    "Your balance is: ", 0
     initialBal      WORD    0
-    dailyDeposits   WORD    24 DUP[?]
-    dailyWithdraws  WORD    24 DUP[?]
+    dailyDeposits   WORD    24 DUP(0)
+    dailyWithdraws  WORD    24 DUP(0)
     finalBal        WORD    0
 
 .code
@@ -56,7 +56,7 @@ main proc
         je DisplayBalance
         mov ebx, ecx
         sub ebx, 24
-        mov [dailyWithdraws + ebx], ax
+        mov [dailyWithdraws + TYPE WORD], ax
         loop WithdrawLoop
                
     mov ecx, 24
@@ -68,7 +68,7 @@ main proc
         sub ebx, 24
         cmp ebx, 0
         je DisplayBalance
-        add ax, [dailyDeposits + ebx]
+        add ax, [dailyDeposits + TYPE WORD]
         loop AddDeposits
    
     DisplayBalance:
@@ -77,6 +77,7 @@ main proc
         call WriteString
         call WriteDec
         call Crlf 
+        call WaitMsg
         
         
 
