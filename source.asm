@@ -1,3 +1,5 @@
+; Working source file
+
 include irvine32.inc
 
 .data
