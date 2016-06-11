@@ -17,15 +17,12 @@ include irvine32.inc
 	;
     msgTitle            BYTE        "Welcome to Balance Checker!", 0
 	origBalTitle		BYTE		"Your original balance: ", 0
-	balPrompt			BYTE		"Enter original balance (max 65535): ", 0
-	depPrompt			BYTE		"Enter deposits (max 24, enter 0 to finish): ", 0
-	withPrompt			BYTE		"Enter withdrawals (max 24, enter 0 to finish): ", 0
 	depTitle			BYTE		"Deposits: ", 0
 	withTitle			BYTE		"Withdrawals: ", 0
     balanceTitle        BYTE        "Your new balance is: ", 0
-    initialBal          WORD        0
-    deposits            WORD        25 DUP(0)
-    withdrawals         WORD        25 DUP(0)
+    initialBal          WORD        1000
+    deposits            WORD        20, 20, 10, 5
+    withdrawals         WORD        20, 10, 20
     finalBal            WORD        0
 
 .code
@@ -33,138 +30,91 @@ main proc
 	;------------------------
 	; print welcome message
 	;
-    mov EDX, OFFSET msgTitle
-    call WriteString
-    call Crlf
-	;-----------------------
-	; get original balance
-	;
-	mov EDX, OFFSET balPrompt
-	call WriteString
-	call ReadInt
-	mov initialBal, AX
+    mov EDX, OFFSET msgTitle								; move msgTitle address to EDX
+    call WriteString										; print message to screen
+    call Crlf												; print new line
 	;-------------------------
 	; print original balance
 	;
-	mov EDX, OFFSET origBalTitle
-	call WriteString
-	movzx EAX, initialBal
-	call WriteDec
+	mov EDX, OFFSET origBalTitle							; move origBalTitle address to EDX
+	call WriteString										; print message to screen
+	movzx EAX, initialBal									; set EAX to initialBal value
+	call WriteDec											; write EAX value to screen in decimal format
 	call Crlf
-	;---------------
-	; get deposits
-	;
-	mov EDX, OFFSET depPrompt
-	call WriteString
-	call Crlf
-	mov EBX, LENGTHOF deposits
-	sub EBX, 1
-	mov ESI, OFFSET deposits
-	mov ECX, EBX
-EnterDeposits:
-	call ReadInt
-	cmp EAX, 0
-	je DepositTitle
-	mov [ESI], AX
-	add ESI, TYPE deposits
-	loop EnterDeposits
 	;-----------------
     ; print deposits
 	;
 DepositTitle:	
 	mov EDX, OFFSET depTitle 
 	call WriteString
-	mov ECX, LENGTHOF deposits
-	mov ESI, OFFSET deposits
-	mov EAX, 0
+	mov ECX, LENGTHOF deposits								; set ECX (loop counter) to array length
+	mov ESI, OFFSET deposits								; set ESI to first address of array
 PrintDepositsLoop:
-	mov AX, [ESI]	
-	call WriteDec
-	cmp ECX, 1
-	je GetWithdrawals	
-	cmp AX, 0
-	je GetWithdrawals
-	mov AL, ','
-	call WriteChar
-	mov AL, ' '
-	call WriteChar
-	add ESI, TYPE WORD
-	dec ECX
-	jmp PrintDepositsLoop	
-	;------------------
-	; get withdrawals
-	;
-GetWithdrawals:
-	call Crlf
-	mov EDX, OFFSET withPrompt
-	call WriteString
-	call Crlf
-	mov EBX, LENGTHOF withdrawals
-	sub EBX, 1
-	mov ESI, OFFSET withdrawals
-	mov ECX, EBX
-EnterWithdrawals:
-	call ReadInt
-	cmp EAX, 0
+	mov AX, [ESI]											; each loop, move array element into AX register
+	call WriteDec											; write EAX register to screen in decimal
+	cmp ECX, 1												; if last loop, skip printing commas	
 	je WithdrawalsTitle
-	mov [ESI], AX
-	add ESI, TYPE withdrawals
-	loop EnterWithdrawals
+	cmp AX, 0												; if array value is zero, end of deposits so jump to GetWithdrawals
+	je WithdrawalsTitle
+	mov AL, ','												; move comma char to AL register
+	call WriteChar											; print to screen
+	mov AL, ' '												; move space char to AL register
+	call WriteChar											; print to screen
+	add ESI, TYPE deposits									; increment ESI address to next element	
+	loop PrintDepositsLoop	
 	;----------------------
 	; print withdrawals
 	;
 WithdrawalsTitle:
-	mov EDX, OFFSET withTitle
-	call WriteString
-	mov ECX, LENGTHOF withdrawals
-	mov ESI, OFFSET withdrawals
+	call Crlf
+	mov EDX, OFFSET withTitle								; move withTitle message to EDX
+	call WriteString										; write message to screen
+	mov ECX, LENGTHOF withdrawals							; set ECX (loop counter) value to withdrawals length
+	mov ESI, OFFSET withdrawals								; set ESI to first address of withdrawals array
 PrintWithdrawalsLoop:
-	mov AX, [ESI]
-	call WriteDec
-	cmp ECX, 1
+	mov AX, [ESI]											; each loop, move element value into AX
+	call WriteDec											; write value to screen
+	cmp ECX, 1												; if loop counter is 1, jump to AddDeposits
 	je AddDeposits
-	cmp EAX, 0
-	je AddDeposits
-	mov AL, ','
-	call WriteChar
-	mov AL, ' '
-	call WriteChar
-	add ESI, TYPE WORD
-	dec ECX
-	jmp PrintWithdrawalsLoop
+	mov AL, ','												; move comma char to AL register
+	call WriteChar											; write char to screen
+	mov AL, ' '												; move space char to AL register
+	call WriteChar											; write char to screen
+	add ESI, TYPE withdrawals								; increment ESI address
+	loop PrintWithdrawalsLoop
 	;--------------------------
 	; all deposits to initial
 	; balance value
 	;
 AddDeposits:
-	movzx EAX, initialBal
-	mov ECX, LENGTHOF deposits
-	mov ESI, OFFSET deposits
+	movzx EAX, initialBal									; move initialBal into EAX
+	mov ECX, LENGTHOF deposits								; set ECX (loop counter) to length of array
+	mov ESI, OFFSET deposits								; set ESI to first address of deposits
 AddDepositsLoop:
-	add AX, [ESI]
-	add ESI, TYPE WORD
+	add AX, [ESI]											; each loop, add deposit value to account balance
+	add ESI, TYPE WORD										; increment ESI to next element
 	loop AddDepositsLoop
 	;--------------------------
 	; subtract withdrawals from
 	; updated balance value
 	;
 AddWithdrawals:
-	mov ECX, LENGTHOF withdrawals
-	mov ESI, OFFSET withdrawals
+	mov ECX, LENGTHOF withdrawals							; set ECX (loop counter) to length of array
+	mov ESI, OFFSET withdrawals								; set ESI to first address of withdrawals
 AddWithdrawalsLoop:
-	sub AX, [ESI]
-	add ESI, TYPE WORD
+	sub AX, [ESI]											; each loop, subtract withdrawal value from account balance
+	add ESI, TYPE WORD										; increment ESI to next element
 	loop AddWithdrawalsLoop
 	;-----------------------
 	; update final balance
 	; variable and print
 	; details to screen
 	;
-    mov finalBal, AX
+    mov finalBal, AX										; update finalBal value
 	call Crlf
-    mov EDX, OFFSET balanceTitle
-    call WriteString
-    call WriteDec
+    mov EDX, OFFSET balanceTitle							; move balanceTitle message to EDX
+    call WriteString										; write message to screen
+    call WriteDec											; write final balance to screen
     call Crlf
 	;---------------------------------------------
     ; wait for user input before exiting program

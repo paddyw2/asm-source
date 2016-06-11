@@ -17,12 +17,15 @@ include irvine32.inc
 	;
     msgTitle            BYTE        "Welcome to Balance Checker!", 0
 	origBalTitle		BYTE		"Your original balance: ", 0
+	balPrompt			BYTE		"Enter original balance (max 65535): ", 0
+	depPrompt			BYTE		"Enter deposits (max 24, enter 0 to finish): ", 0
+	withPrompt			BYTE		"Enter withdrawals (max 24, enter 0 to finish): ", 0
 	depTitle			BYTE		"Deposits: ", 0
 	withTitle			BYTE		"Withdrawals: ", 0
     balanceTitle        BYTE        "Your new balance is: ", 0
-    initialBal          WORD        1000
-    deposits            WORD        20, 20, 10, 5
-    withdrawals         WORD        20, 10, 20
+    initialBal          WORD        0
+    deposits            WORD        24 DUP(0)
+    withdrawals         WORD        24 DUP(0)
     finalBal            WORD        0
 
 .code
@@ -33,6 +36,13 @@ main proc
     mov EDX, OFFSET msgTitle								; move msgTitle address to EDX
     call WriteString										; print message to screen
     call Crlf												; print new line
+	;-----------------------
+	; get original balance
+	;
+	mov EDX, OFFSET balPrompt								; move balPrompt address to EDX
+	call WriteString										; print message to screen
+	call ReadInt											; read user input as integer, store in EAX
+	mov initialBal, AX										; move input into initialBal variable
 	;-------------------------
 	; print original balance
 	;
@@ -41,6 +51,21 @@ main proc
 	movzx EAX, initialBal									; set EAX to initialBal value
 	call WriteDec											; write EAX value to screen in decimal format
 	call Crlf
+	;---------------
+	; get deposits
+	;
+	mov EDX, OFFSET depPrompt
+	call WriteString
+	call Crlf
+	mov ECX, LENGTHOF deposits								; move deposit array length into ECX (loop counter)
+	mov ESI, OFFSET deposits								; move deposits address into ESI
+EnterDeposits:
+	call ReadInt											; read user input as integer and store in EAX
+	cmp EAX, 0												; if input is 0, jump to DepositTitle label
+	je DepositTitle
+	mov [ESI], AX											; if not zero, move EAX value into current element address
+	add ESI, TYPE deposits									; increment address to next element
+	loop EnterDeposits
 	;-----------------
     ; print deposits
 	;
@@ -53,20 +78,36 @@ PrintDepositsLoop:
 	mov AX, [ESI]											; each loop, move array element into AX register
 	call WriteDec											; write EAX register to screen in decimal
 	cmp ECX, 1												; if last loop, skip printing commas	
-	je WithdrawalsTitle
+	je GetWithdrawals
 	cmp AX, 0												; if array value is zero, end of deposits so jump to GetWithdrawals
-	je WithdrawalsTitle
+	je GetWithdrawals
 	mov AL, ','												; move comma char to AL register
 	call WriteChar											; print to screen
 	mov AL, ' '												; move space char to AL register
 	call WriteChar											; print to screen
 	add ESI, TYPE deposits									; increment ESI address to next element	
 	loop PrintDepositsLoop	
+	;------------------
+	; get withdrawals
+	;
+GetWithdrawals:
+	call Crlf
+	mov EDX, OFFSET withPrompt								; move withPrompt message to EDX
+	call WriteString										; write message to screen
+	call Crlf
+	mov ECX, LENGTHOF withdrawals							; set ECX (loop counter) to length of array
+	mov ESI, OFFSET withdrawals								; set ESI to start of withdrawals address
+EnterWithdrawals:
+	call ReadInt											; save user input as integer to EAX register
+	cmp EAX, 0												; if input is 0, jump to WithdrawalsTitle
+	je WithdrawalsTitle
+	mov [ESI], AX											; move user input value to current array element
+	add ESI, TYPE withdrawals								; increment ESI address to next element
+	loop EnterWithdrawals
 	;----------------------
 	; print withdrawals
 	;
 WithdrawalsTitle:
-	call Crlf
 	mov EDX, OFFSET withTitle								; move withTitle message to EDX
 	call WriteString										; write message to screen
 	mov ECX, LENGTHOF withdrawals							; set ECX (loop counter) value to withdrawals length
