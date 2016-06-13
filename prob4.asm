@@ -16,7 +16,7 @@ include irvine32.inc
     ; text info on the screen
     ;
     bigEndian       BYTE    12h, 34h, 56h, 78h
-    littleEndian    DWORD   4 DUP(?)
+    littleEndian    DWORD   ?
     titleMsg        BYTE    "Welcome to Big Endian, Little Endian!", 0
     bigMsg          BYTE    "Big Endian Storage: ", 0
     littleMsg       BYTE    "Little Endian Storage: ", 0
@@ -37,30 +37,23 @@ main proc
     call Crlf
     ;--------------------------
     ; print bigEndian array to
-    ; screen, and push values
-    ; to stack
+    ; screen, and move each
+    ; value to corresponding
+    ; littleEndian position
     ;
     mov ESI, OFFSET bigEndian                                   ; move bigEndian starting address into ESI
+    mov EBX, OFFSET littleEndian                                ; move littleEndian "first" (technical last) byte into EBX
     mov ECX, LENGTHOF bigEndian                                 ; set ECX (loop counter) to length of bigEndian
     mov EAX, 0                                                  ; clear EAX by setting to 0
 PrintBig:
     mov AL, [ESI]                                               ; each loop, move current bigEndian element into AL
     call WriteHex                                               ; print element to screen in hex format
-    push EAX                                                    ; push array element to stack
     call Crlf                                                   ; print new line
+    mov [EBX], AL                                               ; move first byte of bigEndian into last byte of littleEndian
     add ESI, TYPE bigEndian                                     ; increment ESI address
-    loop PrintBig
-    ;-----------------------------------
-    ; convert bigEndian format to
-    ; littleEndian from stack
-    ;
-    mov ESI, OFFSET littleEndian
-    mov ECX, LENGTHOF littleEndian
-ConvertEndian:
-    pop EAX                                                     ; each loop, pop top stack value into EAX
-    mov [ESI], EAX                                              ; move eax value into current address position  
-    add ESI, TYPE littleEndian                                  ; increment address value to next array element
-    loop ConvertEndian
+    add EBX, TYPE BYTE                                          ; increment EBX address by a byte to move backwards
+    loop PrintBig                                               ; repeat for length of bigEndian
+
     ;------------------------
     ; print little endian message
     ;
@@ -70,14 +63,10 @@ ConvertEndian:
     ;--------------------------
     ; print littleEndian array
     ;
-    mov ESI, OFFSET littleEndian    
-    mov ECX, LENGTHOF littleEndian
-PrintLittle:
-    mov EAX, [ESI]                                              ; each loop, move current littleEndian element into AL
-    call WriteHex                                               ; print element to screen in hex format
-    call Crlf                                                   ; print new line
-    add ESI, TYPE littleEndian                                  ; increment ESI address
-    loop PrintLittle
+    mov EAX, littleEndian
+    call WriteHex
+    call Crlf
+
     ;---------------------------------------------
     ; wait for user input before exiting program
     ;
