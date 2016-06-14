@@ -24,15 +24,15 @@ main proc
     ;
     mov EDX, OFFSET origMsg                     ; move "Original Array: " message address to EDX 
     call WriteString                            ; print to screen
-    call Crlf
+    call Crlf                                   ; print new line to screen
     mov ECX, LENGTHOF myArray                   ; set ECX register (decremented each loop) to length of array
     mov ESI, OFFSET myArray                     ; set ESI to the first memory address of array
 PrintOrigArray:
     mov EAX, [ESI]                              ; move element value into EAX
     add ESI, TYPE myArray                       ; move ESI address to next element by adding array type (1 or 2 etc)
     call WriteDec                               ; write EAX to screen
-    call Crlf
-    loop PrintOrigArray
+    call Crlf                                   ; print new line to screen
+    loop PrintOrigArray                         ; decrement ECX and loop again if != 0
     ;-----------------------------------
     ; push each element onto the stack 
     ;
@@ -40,8 +40,8 @@ PrintOrigArray:
     mov ECX, LENGTHOF myArray                   ; set ECX (loop counter) to length of array
 PushArray:
     push [ESI]                                  ; for each element address, push the value onto the stack
-    add ESI, TYPE myArray
-    loop PushArray
+    add ESI, TYPE myArray                       ; increment ESI value (address) by type of array (i.e. 1, 2, 4, 8 etc)
+    loop PushArray                              ; decrement ECX and loop again if != 0
     ;---------------------------------
     ; pop each element off the stack 
     ;
@@ -51,25 +51,26 @@ PopArray:
     pop EAX                                     ; for each loop, pop stack value into EAX
     mov [ESI], EAX                              ; then move EAX value into each array element 
     add ESI, TYPE myArray                       ; increment array element address
-    loop PopArray
+    loop PopArray                               ; decrement ECX and loop again if != 0
     ;---------------------------------------
     ; print myArray to show it is reversed 
     ;
     mov EDX, OFFSET revMsg                      ; move "Original Array, now reversed: " message to EDX
     call WriteString                            ; print message to screen
-    call Crlf   
+    call Crlf                                   ; print new line to screen
     mov ECX, LENGTHOF myArray                   ; set ECX (loop counter) to length of array
     mov ESI, OFFSET myArray                     ; set ESI to first memory address of array
 PrintCopyArray:
     mov EAX, [ESI]                              ; for each loop, move element value into EAX
     add ESI, TYPE myArray                       ; increment address value to next element
     call WriteDec                               ; write EAX value to screen
-    call Crlf
-    loop PrintCopyArray
-    ;---------------------------------------------
-    ; wait for user input before exiting program
+    call Crlf                                   ; print new line to screen
+    loop PrintCopyArray                         ; decrement ECX and loop again if != 0
+    ;-------------------------------------
+    ; wait for user input before exiting
+    ; program
     ;
-    call WaitMsg
+    call WaitMsg                                ; print wait message and wait for user input
     exit
 main endp
 end main

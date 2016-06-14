@@ -14,6 +14,9 @@ include irvine32.inc
     ; deposits stores a list of user deposits
     ; withdrawals stores a list of user withdrawals
     ; finalBal stores the users updated balance
+    ; msgTitle, origBalTitle, depTitle, withTitle
+    ; and balanceTitle are messages used to display
+    ; information to user
     ;
     msgTitle            BYTE        "Welcome to Balance Checker!", 0
     origBalTitle        BYTE        "Your original balance: ", 0
@@ -40,33 +43,33 @@ main proc
     call WriteString                                        ; print message to screen
     movzx EAX, initialBal                                   ; set EAX to initialBal value
     call WriteDec                                           ; write EAX value to screen in decimal format
-    call Crlf
+    call Crlf                                               ; print new line
     ;-----------------
     ; print deposits
     ;
 DepositTitle:   
-    mov EDX, OFFSET depTitle 
-    call WriteString
+    mov EDX, OFFSET depTitle                                ; move start of depTitle address to EDX
+    call WriteString                                        ; print EDX contents to screen
     mov ECX, LENGTHOF deposits                              ; set ECX (loop counter) to array length
     mov ESI, OFFSET deposits                                ; set ESI to first address of array
 PrintDepositsLoop:
     mov AX, [ESI]                                           ; each loop, move array element into AX register
     call WriteDec                                           ; write EAX register to screen in decimal
     cmp ECX, 1                                              ; if last loop, skip printing commas    
-    je WithdrawalsTitle
+    je WithdrawalsTitle                                     ; jump to WithdrawalsTitle if cmp instruction sets zero flag
     cmp AX, 0                                               ; if array value is zero, end of deposits so jump to GetWithdrawals
-    je WithdrawalsTitle
+    je WithdrawalsTitle                                     ; jump to WithdrawalsTitle if cmp instruction sets zero flag
     mov AL, ','                                             ; move comma char to AL register
     call WriteChar                                          ; print to screen
     mov AL, ' '                                             ; move space char to AL register
     call WriteChar                                          ; print to screen
     add ESI, TYPE deposits                                  ; increment ESI address to next element 
-    loop PrintDepositsLoop  
+    loop PrintDepositsLoop                                  ; decrement ECX and if != 0, return to printdepositloop label 
     ;----------------------
     ; print withdrawals
     ;
 WithdrawalsTitle:
-    call Crlf
+    call Crlf                                               ; print new line
     mov EDX, OFFSET withTitle                               ; move withTitle message to EDX
     call WriteString                                        ; write message to screen
     mov ECX, LENGTHOF withdrawals                           ; set ECX (loop counter) value to withdrawals length
@@ -74,17 +77,17 @@ WithdrawalsTitle:
 PrintWithdrawalsLoop:
     mov AX, [ESI]                                           ; each loop, move element value into AX
     call WriteDec                                           ; write value to screen
-    cmp ECX, 1                                              ; if loop counter is 1, jump to AddDeposits
-    je AddDeposits
+    cmp ECX, 1                                              ; compare ECX value to 1
+    je AddDeposits                                          ; if zero flag set (equal), jump to AddDeposits
     mov AL, ','                                             ; move comma char to AL register
     call WriteChar                                          ; write char to screen
     mov AL, ' '                                             ; move space char to AL register
     call WriteChar                                          ; write char to screen
     add ESI, TYPE withdrawals                               ; increment ESI address
-    loop PrintWithdrawalsLoop
+    loop PrintWithdrawalsLoop                               ; decrement ECX and loop again if != 0
     ;--------------------------
-    ; all deposits to initial
-    ; balance value
+    ; add all deposits to 
+    ; initial balance value
     ;
 AddDeposits:
     movzx EAX, initialBal                                   ; move initialBal into EAX
@@ -93,7 +96,7 @@ AddDeposits:
 AddDepositsLoop:
     add AX, [ESI]                                           ; each loop, add deposit value to account balance
     add ESI, TYPE WORD                                      ; increment ESI to next element
-    loop AddDepositsLoop
+    loop AddDepositsLoop                                    ; decrement ECX and loop again if != 0
     ;--------------------------
     ; subtract withdrawals from
     ; updated balance value
@@ -104,22 +107,22 @@ AddWithdrawals:
 AddWithdrawalsLoop:
     sub AX, [ESI]                                           ; each loop, subtract withdrawal value from account balance
     add ESI, TYPE WORD                                      ; increment ESI to next element
-    loop AddWithdrawalsLoop
+    loop AddWithdrawalsLoop                                 ; decrement ECX and loop again if != 0
     ;-----------------------
     ; update final balance
     ; variable and print
     ; details to screen
     ;
     mov finalBal, AX                                        ; update finalBal value
-    call Crlf
+    call Crlf                                               ; print new line
     mov EDX, OFFSET balanceTitle                            ; move balanceTitle message to EDX
     call WriteString                                        ; write message to screen
     call WriteDec                                           ; write final balance to screen
-    call Crlf
+    call Crlf                                               ; print new line
     ;---------------------------------------------
     ; wait for user input before exiting program
     ;
-    call WaitMsg
-    exit
+    call WaitMsg                                            ; print wait message to screen and wait for user input
+    exit                            
 main endp
 end main

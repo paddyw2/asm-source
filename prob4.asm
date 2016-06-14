@@ -34,7 +34,7 @@ main proc
     ;
     mov EDX, OFFSET bigMsg                                      ; move titleMsg address to EDX
     call WriteString                                            ; print "Welcome to..." message to screen
-    call Crlf
+    call Crlf                                                   ; print new line to screen
     ;--------------------------
     ; print bigEndian array to
     ; screen, and move each
@@ -52,25 +52,25 @@ PrintBig:
     mov [EBX], AL                                               ; move first byte of bigEndian into last byte of littleEndian
     add ESI, TYPE bigEndian                                     ; increment ESI address
     add EBX, TYPE BYTE                                          ; increment EBX address by a byte to move backwards
-    loop PrintBig                                               ; repeat for length of bigEndian
+    loop PrintBig                                               ; repeat loop for length of bigEndian (dec ECX, loop if != 0)
 
     ;------------------------
     ; print little endian message
     ;
     mov EDX, OFFSET littleMsg                                   ; move littleMsg address to EDX
     call WriteString                                            ; print message to screen
-    call Crlf
+    call Crlf                                                   ; print new line to screen
     ;--------------------------
     ; print littleEndian array
     ;
-    mov EAX, littleEndian
-    call WriteHex
-    call Crlf
+    mov EAX, littleEndian                                       ; move littleEndian value to EAX
+    call WriteHex                                               ; print EAX value to screen in hex format
+    call Crlf                                                   ; print new line
 
     ;---------------------------------------------
     ; wait for user input before exiting program
     ;
-    call WaitMsg
+    call WaitMsg                                                ; print wait message and wait for user input
     exit
 main endp
 end main

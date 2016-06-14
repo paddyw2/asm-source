@@ -15,9 +15,10 @@ include irvine32.inc
     ; match COUNT
     ; startVal is used for the 0, 1 positions of the
     ; sequence, before the loop takes place 
-    ; titleMsg and fibMsg are used to print to screen
+    ; titleMsg and fibMsg are used to print info to
+    ; screen
     ;
-    COUNT = 7               ; max size is 24 due to 16bit WORD capacity
+    COUNT = 7               ; max value is 24 due to 16bit WORD capacity
     fibArray    WORD        COUNT DUP(?)
     startVal    WORD        1   
     titleMsg    BYTE        "Welcome to the Fibonacci Sequence generator!", 0
@@ -30,12 +31,13 @@ main proc
     ;
     mov EDX, OFFSET titleMsg                                    ; move titleMsg address to EDX
     call WriteString                                            ; print "Welcome to the..." message to screen
-    call Crlf
+    call Crlf                                                   ; print new line to screen
     ;----------------------------------
     ; print start of sequence message
+    ;
     mov EDX, OFFSET fibMsg                                      ; move fibMsg address to EDX
     call WriteString                                            ; print "Fibonacci Sequence:" message to screen
-    call Crlf
+    call Crlf                                                   ; print new line to screen
     ;------------------------------------
     ; move fibArray address to ESI, and
     ; push the first of two values of the
@@ -53,7 +55,7 @@ main proc
     sub ECX, 2                                                  ; subtract 2 from counter value to account for first two elements
     add ESI, TYPE fibArray                                      ; move address to next array element
     push EAX                                                    ; push the two starting values to the stack
-    push EAX
+    push EAX                                                    ; push value the second time
     ;-------------------------------
     ; start loop to calculate main
     ; sequence and update fibArray
@@ -66,13 +68,13 @@ FibLoop:
     mov [ESI], AX                                               ; move n into fibArray current element position
     add ESI, TYPE fibArray                                      ; increment fibArray address
     push EAX                                                    ; push n value onto stack, to become n-1 for next loop
-    loop FibLoop
+    loop FibLoop                                                ; decrement ECX and loop again if != 0
     ;-----------------------------------
     ; move fibArray address to ESI and
     ; set ECX to array length
     ;
-    mov ESI, OFFSET fibArray
-    mov ECX, LENGTHOF fibArray
+    mov ESI, OFFSET fibArray                                    ; move first address of fibArray into ESI
+    mov ECX, LENGTHOF fibArray                                  ; set ECX (loop counter) value to length of fibArray
     ;-----------------------------------
     ; loop over fibArray and print each
     ; array element
@@ -82,11 +84,11 @@ PrintLoop:
     call WriteDec                                               ; write value to screen
     call Crlf                                                   ; print new line
     add ESI, TYPE fibArray                                      ; increment fibArray address    
-    loop PrintLoop
+    loop PrintLoop                                              ; decrement ECX and loop again if != 0
     ;---------------------------------------------
     ; wait for user input before exiting program
     ;
-    call WaitMsg
+    call WaitMsg                                                ; print wait message and wait for user input
     exit
 main endp
 end main
