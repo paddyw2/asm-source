@@ -6,75 +6,46 @@
 
 include irvine32.inc
 
-.data
-    ; an array for account numbers stored in system.
-    accountNumbers DWORD 10021331, 12322244, 44499922, 10222334
-    ;an array for PINS corresponding to each account
-    PINS WORD 2341, 3345, 1923, 3456
-    ; an array for balances corresponding to each account
-    Balances DWORD 1000, 0, 80000, 4521
-    ; maximum withdrawal amount
-    maxAmount   DWORD   1000
-    ; atm welcome message
-    welcomeMsg  BYTE    "Welcome to your local ATM", 0
-    ; pin prompt
-    pinPrompt   BYTE    "Enter your pin: ", 0
-    ; account number prompt
-    accountPrompt   BYTE    "Enter your account number: ", 0
-    ; session id - corresponds to index position of account number etc.
-    sessionId   BYTE    ?
-    ; 0 if details are invalid, 1 if details are valid
-    validDetails    BYTE    0
-    ; invalid accoutn no message
-    invalidAccountMsg   BYTE    "That account does not exist", 0
-    ; message shown on program exit
-    exitMsg     BYTE        "Thank you for using this ATM", 0
-    ; menu display message with input options
-    menuMsg     BYTE        "Please choose an option:", 0dh,0ah
-                BYTE        "1 - Display balance", 0dh,0ah
-                BYTE        "2 - Withdraw", 0dh,0ah
-                BYTE        "3 - Deposit", 0dh,0ah
-                BYTE        "4 - Print Receipt", 0dh,0ah
-                BYTE        "5 - Exit", 0
-    ; deposit option menu
-    depositMenuMsg  BYTE    "Choose a deposit option:", 0dh, 0ah
-                    BYTE    "1 - Cash", 0dh, 0ah
-                    BYTE    "2 - Check", 0
-    ; cash message
-    cashDepositMsg         BYTE    "Cash deposit - please enter denominations of $10", 0
-    ; check message
-    checkDepositMsg        BYTE    "Check deposit - please enter check value", 0
-    ; invalid deposit selection
-    invalidDepositSelection BYTE    "Invalid selection option", 0
-    ; prompt for when entering a deposit value
-    depositPrompt   BYTE    "Enter deposit amount: ", 0
-    ; prompt for when entering a withdrawal value
-    withdrawalPrompt    BYTE    "Enter withdrawal amount: ", 0
-    ; insufficient funds error message
-    insufficientFunds   BYTE    "Insufficient funds - withdrawal cancelled", 0
-    ; withdrawal success message
-    withdrawalSuccessMsg    BYTE    "Withdrawal completed", 0
-    ; message used when balance is displayed
-    balMsg          BYTE        "Balance: ", 0
-    ; account number display message
-    accountNumberMsg    BYTE    "Account number: ", 0
-    ; successful login message
-    validDetailsMsg BYTE        "Details match - user validated", 0
-    ; incorrect pin message
-    wrongPinMsg     BYTE        "Incorrect pin - exiting", 0
-    ; invalid menu selection message
-    invalidMenuInput    BYTE    "Invalid menu selection", 0
-    ; total withdrawn
-    totalWithdrawn      DWORD   0
-    ; total deposited
-    totalDeposited      DWORD   0
-    ; transaction counter
-    transactionCounter  BYTE    0
-    ; transaction limit
-    TRANSLIMIT = 3
-    ; trans limited exceeded error message
-    transLimitMsg   BYTE    "You have reached the transaction limit for this session", 0
-
+.data 
+    accountNumbers      DWORD   10021331, 12322244, 44499922, 10222334              ; an array for account numbers stored in system 
+    PINS                WORD    2341, 3345, 1923, 3456                              ; an array for PINS corresponding to each account 
+    Balances            DWORD   1000, 0, 80000, 4521                                ; an array for balances corresponding to each account
+    maxAmount           DWORD   1000                                                ; maximum withdrawal amount
+    welcomeMsg          BYTE    "Welcome to your local ATM", 0                      ; atm welcome message
+    pinPrompt           BYTE    "Enter your pin: ", 0                               ; pin prompt
+    accountPrompt       BYTE    "Enter your account number: ", 0                    ; account number prompt 
+    sessionId           BYTE    ?                                                   ; session id - corresponds to index position of account number etc.
+    validDetails        BYTE    0                                                   ; 0 if details are invalid, 1 if details are valid
+    invalidAccountMsg   BYTE    "That account does not exist", 0                    ; invalid accoutn no message
+    exitMsg             BYTE    "Thank you for using this ATM", 0                   ; message shown on program exit
+    menuMsg             BYTE        "Please choose an option:", 0dh,0ah             ; menu display message with input options
+                        BYTE        "1 - Display balance", 0dh,0ah
+                        BYTE        "2 - Withdraw", 0dh,0ah
+                        BYTE        "3 - Deposit", 0dh,0ah
+                        BYTE        "4 - Print Receipt", 0dh,0ah
+                        BYTE        "5 - Exit", 0
+    depositMenuMsg      BYTE    "Choose a deposit option:", 0dh, 0ah                ; deposit option menu
+                        BYTE    "1 - Cash", 0dh, 0ah
+                        BYTE    "2 - Check", 0
+    cashDepositMsg      BYTE    "Cash deposit - please enter multiples of $10", 0   ; cash message 
+    checkDepositMsg     BYTE    "Check deposit - please enter check value", 0       ; check message
+    invalidDepChoice    BYTE    "Invalid selection option", 0                       ; invalid deposit menu choice message
+    depositPrompt       BYTE    "Enter deposit amount: ", 0                         ; prompt for when entering a deposit value
+    withdrawalPrompt    BYTE    "Enter withdrawal amount: ", 0                      ; prompt for when entering a withdrawal value
+    insufficientFunds   BYTE    "Insufficient funds - withdrawal cancelled", 0      ; insufficient funds error message
+    withdrawSuccessMsg  BYTE    "Withdrawal completed", 0                           ; withdrawal success message
+    balMsg              BYTE    "Balance: $", 0                                     ; message used when balance is displayed 
+    accountNumberMsg    BYTE    "Account number: ", 0                               ; account number display message
+    validDetailsMsg     BYTE    "Details match - user validated", 0                 ; successful login message
+    wrongPinMsg         BYTE    "Incorrect pin - exiting", 0                        ; incorrect pin message
+    invalidMenuInput    BYTE    "Invalid menu selection", 0                         ; invalid menu selection message
+    totalWithdrawMsg    BYTE    "Total withdrawn: $", 0                             ; total withdrawn message
+    totalDepositMsg     BYTE    "Total deposited: $", 0                             ; total deposited message
+    totalWithdrawn      DWORD   0                                                   ; total withdrawn
+    totalDeposited      DWORD   0                                                   ; total deposited
+    transactionCounter  BYTE    0                                                   ; transaction counter
+    transLimitMsg       BYTE    "Transaction limit reached for this session", 0     ; trans limited exceeded error message
+    TRANSLIMIT = 3                                                                  ; transaction limit
 
 .code
 main proc
@@ -284,7 +255,7 @@ Deposit PROC
     je Cash
     cmp EAX, 2
     je Check
-    mov EDX, OFFSET invalidDepositSelection
+    mov EDX, OFFSET invalidDepChoice
     call WriteString
     call Crlf
     jmp Finish
@@ -328,6 +299,16 @@ GetAccountNumber:
     add ESI, TYPE accountNumbers
     loop GetAccountNumber
     mov EAX, DWORD PTR [ESI]
+    call WriteDec
+    call Crlf
+    mov EDX, OFFSET totalWithdrawMsg
+    call WriteString
+    mov EAX, totalWithdrawn
+    call WriteDec
+    call Crlf
+    mov EDX, OFFSET totalDepositMsg
+    call WriteString
+    mov EAX, totalDeposited
     call WriteDec
     call Crlf
     call DisplayBalance
