@@ -11,19 +11,23 @@ include irvine32.inc
     PINS                WORD    2341, 3345, 1923, 3456                              ; an array for PINS corresponding to each account 
     Balances            DWORD   1000, 0, 80000, 4521                                ; an array for balances corresponding to each account
     maxAmount           DWORD   1000                                                ; maximum withdrawal amount
-    welcomeMsg          BYTE    "Welcome to your local ATM", 0                      ; atm welcome message
+    welcomeMsg          BYTE    "#############################", 0dh,0ah            ; atm welcome message
+                        BYTE    "# Welcome to your local ATM #", 0dh,0ah 
+                        BYTE    "#############################", 0
     pinPrompt           BYTE    "Enter your pin: ", 0                               ; pin prompt
     accountPrompt       BYTE    "Enter your account number: ", 0                    ; account number prompt 
     sessionId           BYTE    ?                                                   ; session id - corresponds to index position of account number etc.
     validDetails        BYTE    0                                                   ; 0 if details are invalid, 1 if details are valid
     invalidAccountMsg   BYTE    "That account does not exist", 0                    ; invalid accoutn no message
     exitMsg             BYTE    "Thank you for using this ATM", 0                   ; message shown on program exit
-    menuMsg             BYTE        "Please choose an option:", 0dh,0ah             ; menu display message with input options
+    menuMsg             BYTE        "############# ATM MENU #############", 0dh,0ah ; menu display message with input options
+                        BYTE        0dh,0ah,"Please choose an option:", 0dh,0ah
                         BYTE        "1 - Display balance", 0dh,0ah
                         BYTE        "2 - Withdraw", 0dh,0ah
                         BYTE        "3 - Deposit", 0dh,0ah
                         BYTE        "4 - Print Receipt", 0dh,0ah
-                        BYTE        "5 - Exit", 0
+                        BYTE        "5 - Exit", 0dh,0ah,0dh,0ah
+                        BYTE        "############# ATM MENU #############", 0
     depositMenuMsg      BYTE    "Choose a deposit option:", 0dh, 0ah                ; deposit option menu
                         BYTE    "1 - Cash", 0dh, 0ah
                         BYTE    "2 - Check", 0
@@ -46,6 +50,9 @@ include irvine32.inc
     transactionCounter  BYTE    0                                                   ; transaction counter
     transLimitMsg       BYTE    "Transaction limit reached for this session", 0     ; trans limited exceeded error message
     TRANSLIMIT = 3                                                                  ; transaction limit
+    LOGINLIMIT = 3
+    loginCounter        BYTE    0
+    loginExceedMsg      BYTE    "Incorrect login attempt limit reached", 0
 
 .code
 main proc
@@ -53,6 +60,41 @@ main proc
     mov EDX, OFFSET welcomeMsg
     call WriteString
     call Crlf
+UserLogin:
+    call Crlf
+    call GetLoginDetails
+    ; check details are valid, if invalud validDetails set to 0
+    call ValidateDetails
+    cmp validDetails, 1
+    je PrintMenu
+    call WaitMsg
+    cmp loginCounter, LOGINLIMIT
+    jnb LoginExceeded
+    jmp UserLogin
+
+LoginExceeded:
+    call Crlf
+    mov EDX, OFFSET loginExceedMsg
+    call WriteString
+    call Crlf
+    jmp Quit
+;-----------
+; print menu message and
+; process user input
+;
+PrintMenu:
+    call MainMenu
+
+Quit:
+    call QuitMessage
+    
+    exit
+main endp
+
+;----
+; processes
+;----
+GetLoginDetails PROC
     ; prompt user for account number
     mov EDX, OFFSET accountPrompt
     call WriteString
@@ -62,63 +104,9 @@ main proc
     mov EDX, OFFSET pinPrompt
     call WriteString
     call ReadInt
-    
-    ; check details are valid, if invalud validDetails set to 0
-    call ValidateDetails
-    cmp validDetails, 1
-    jne Quit
-
-;-----------
-; print menu message and
-; process user input
-;
-PrintMenu:
-    call WaitMsg                            ; allow user to control when to continue
-    call Clrscr                             ; clear screen before printing menu each time
-    
-    mov EDX, OFFSET menuMsg
-    call WriteString
-    call Crlf
-    call ReadInt
-    cmp EAX, 1
-    je Option1
-    cmp EAX, 2
-    je Option2
-    cmp EAX, 3
-    je Option3
-    cmp EAX, 4
-    je Option4
-    cmp EAX, 5
-    je Quit
-    mov EDX, OFFSET invalidMenuInput
-    call WriteString
-    call Crlf
-    jmp PrintMenu
-
-Option1:
-    call DisplayBalance
-    jmp PrintMenu
-Option2:
-    call Withdraw
-    jmp PrintMenu
-Option3:
-    call Deposit
-    jmp PrintMenu
-Option4:
-    call PrintReceipt
-    jmp PrintMenu
-Quit:
-    mov EDX, OFFSET exitMsg
-    call WriteString
-    call Crlf
-    call WaitMsg
-    exit
-    main endp
-
-;----
-; processes
-;----
-
+    inc loginCounter
+    ret
+GetLoginDetails ENDP
 ;---------------------------------
 ValidateDetails PROC
 ; takes EAX as pin, and EBX as account
@@ -164,6 +152,62 @@ Finish:
     POPAD           ; restore values
     ret
 ValidateDetails ENDP
+
+;------------------------------
+MainMenu PROC
+    PUSHAD
+
+PrintMenu:
+    call WaitMsg                            ; allow user to control when to continue
+    call Clrscr                             ; clear screen before printing menu each time
+    
+    mov EDX, OFFSET menuMsg
+    call WriteString
+    call Crlf
+    call ReadInt
+    cmp EAX, 1
+    je Option1
+    cmp EAX, 2
+    je Option2
+    cmp EAX, 3
+    je Option3
+    cmp EAX, 4
+    je Option4
+    cmp EAX, 5
+    je Quit
+    mov EDX, OFFSET invalidMenuInput
+    call WriteString
+    call Crlf
+    jmp PrintMenu
+
+Option1:
+    call DisplayBalance
+    jmp PrintMenu
+Option2:
+    call Withdraw
+    jmp PrintMenu
+Option3:
+    call Deposit
+    jmp PrintMenu
+Option4:
+    call PrintReceipt
+    jmp PrintMenu
+Quit:
+
+    POPAD
+    ret
+MainMenu ENDP
+
+;----------------------h
+QuitMessage PROC
+    PUSHAD
+    mov EDX, OFFSET exitMsg
+    call WriteString
+    call Crlf
+    call WaitMsg
+    POPAD
+    ret
+QuitMessage ENDP
 
 ;-----------------------------
 GetBalance PROC
