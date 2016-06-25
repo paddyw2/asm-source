@@ -10,7 +10,8 @@ include irvine32.inc
     accountNumbers      DWORD   10021331, 12322244, 44499922, 10222334              ; an array for account numbers stored in system 
     PINS                WORD    2341, 3345, 1923, 3456                              ; an array for PINS corresponding to each account 
     Balances            DWORD   1000, 0, 80000, 4521                                ; an array for balances corresponding to each account
-    maxAmount           DWORD   1000                                                ; maximum withdrawal amount
+    maxWithdrawalVal    DWORD   1000                                                ; maximum withdrawal amount
+    maxWithdrawalMsg    BYTE    "Max withdrawal is $1000 - withdrawal cancelled",0  ; max withdrawal message
     welcomeMsg          BYTE    "#############################", 0dh,0ah            ; atm welcome message
                         BYTE    "# Welcome to your local ATM #", 0dh,0ah 
                         BYTE    "#############################", 0
@@ -53,6 +54,9 @@ include irvine32.inc
     LOGINLIMIT = 3
     loginCounter        BYTE    0
     loginExceedMsg      BYTE    "Incorrect login attempt limit reached", 0
+    cashCheckDep        BYTE    ?
+    invalidDenomMsg     BYTE    "Not a denomination of $10 - deposit cancelled",0   ; invalid denomination message
+    enteredDeposit      DWORD   ?
 
 .code
 main proc
@@ -259,7 +263,9 @@ Withdraw PROC
     mov EBX, EAX
     call GetBalance    
     cmp EBX, EAX
-    ja Error                                ; if withdrawal is greater than balance, generate error
+    ja Error                                                    ; if withdrawal is greater than balance, generate error
+    cmp EBX, maxWithdrawalVal                                   ; if withdrawal greater than max withdrawal limit, generate error  
+    ja ErrorMax
     ; bal value is in EAX, and address in ESI
     sub EAX, EBX
     add totalWithdrawn, EBX
@@ -270,6 +276,11 @@ Withdraw PROC
     jmp Finish
 TransactionLimit:
     call TransactionLimitExceeded
+    jmp Finish
+ErrorMax:
+    mov EDX, OFFSET maxWithdrawalMsg
+    call WriteString
+    call Crlf
     jmp Finish
 Error:
     mov EDX, OFFSET insufficientFunds
@@ -303,15 +314,18 @@ Deposit PROC
     call WriteString
     call Crlf
     jmp Finish
+
 TransactionLimit:
     call TransactionLimitExceeded
     jmp Finish
 Cash:
+    mov cashCheckDep, 1
     mov EDX, OFFSET cashDepositMsg
     call WriteString
     call Crlf
     jmp EnterValue
 Check:
+    mov cashCheckDep, 0
     mov EDX, OFFSET checkDepositMsg
     call WriteString
     call Crlf
@@ -319,6 +333,19 @@ EnterValue:
     mov EDX, OFFSET depositPrompt
     call WriteString
     call ReadInt
+
+    cmp cashCheckDep, 1
+    jne BalanceCalc                                                         ; jump to next step if not cash
+    mov enteredDeposit, EAX                                                 ; move entered amount into memory to accessed via pointers
+    PUSHAD                                                                  ; push eax register to stack to save value
+    mov DX, WORD PTR [enteredDeposit + 2]                                   ; move first part of EAX value into DX
+    mov AX, WORD PTR enteredDeposit                                         ; move seconds part into AX (note little endian)
+    mov BX, 10                                                              ; 10 is our divisor, so move into BX
+    div BX                                                                  ; perform division
+    cmp DX, 0                                                               ; if 10|EAX then remainder should be 0
+    POPAD                                                                   ; restore register values before any jumps occur
+    jne InvalidDenom                                                        ; if there is remainder, trigger error
+BalanceCalc:
     mov EBX, EAX
     call GetBalance    
     ; bal value is in EAX, and address in ESI
@@ -328,6 +355,11 @@ EnterValue:
     mov DWORD PTR [ESI], EAX
     inc transactionCounter
     call DisplayBalance
+    jmp Finish
+InvalidDenom:
+    mov EDX, OFFSET invalidDenomMsg
+    call WriteString
+    call Crlf
 Finish:    
     POPAD
     ret
