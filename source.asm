@@ -56,41 +56,36 @@ include irvine32.inc
     loginExceedMsg      BYTE    "Incorrect login attempt limit reached", 0
     cashCheckDep        BYTE    ?
     invalidDenomMsg     BYTE    "Not a denomination of $10 - deposit cancelled",0   ; invalid denomination message
-    enteredDeposit      DWORD   ?
+    enteredDeposit      DWORD   ?                                                   ; memory location for deposit value
 
 .code
 main proc
-    ; print welcome message
-    mov EDX, OFFSET welcomeMsg
-    call WriteString
-    call Crlf
+    mov EDX, OFFSET welcomeMsg                                                      ; move welcome message offset into EDX 
+    call WriteString                                                                ; write welcome message to screen
+    call Crlf                                                                       ; print new line
 UserLogin:
-    call Crlf
-    call GetLoginDetails
-    ; check details are valid, if invalud validDetails set to 0
-    call ValidateDetails
-    cmp validDetails, 1
-    je PrintMenu
-    call WaitMsg
-    cmp loginCounter, LOGINLIMIT
-    jnb LoginExceeded
-    jmp UserLogin
+    call Crlf                                                                       ; print new line
+    call GetLoginDetails                                                            ; call login prompt procedure
+    call ValidateDetails                                                            ; call validation procedure, if details invalid validDetails set to 0
+    cmp validDetails, 1                                                             ; check details were valid
+    je PrintMenu                                                                    ; if valid, jump to PrintMenu
+    call WaitMsg                                                                    ; print wait message, wait for user input
+    cmp loginCounter, LOGINLIMIT                                                    ; compare login attempts to limit
+    jnb LoginExceeded                                                               ; if greater than three, jump to LoginExceeded
+    jmp UserLogin                                                                   ; else, jump back to the start of UserLogin
 
 LoginExceeded:
-    call Crlf
-    mov EDX, OFFSET loginExceedMsg
-    call WriteString
-    call Crlf
-    jmp Quit
-;-----------
-; print menu message and
-; process user input
-;
+    call Crlf                                                                       ; print new line
+    mov EDX, OFFSET loginExceedMsg                                                  ; move login exceeded message into EDX
+    call WriteString                                                                ; print message to screen
+    call Crlf                                                                       ; print new line
+    jmp Quit                                                                        ; jump to quit label
+
 PrintMenu:
-    call MainMenu
+    call MainMenu                                                                   ; call MainMenu procedure
 
 Quit:
-    call QuitMessage
+    call QuitMessage                                                                ; call QuitMessage procedure
     
     exit
 main endp
@@ -98,55 +93,62 @@ main endp
 ;----
 ; processes
 ;----
+
+;--------------------------------------------
 GetLoginDetails PROC
-    ; prompt user for account number
-    mov EDX, OFFSET accountPrompt
-    call WriteString
-    call ReadInt
-    mov EBX, EAX
-    ; prompt user for pin number
-    mov EDX, OFFSET pinPrompt
-    call WriteString
-    call ReadInt
-    inc loginCounter
-    ret
+; Prompt user for account and pin number
+;
+; Receives:
+; Returns: EAX, EBX as pin and account number
+;
+    mov EDX, OFFSET accountPrompt                                                   ; move enter account number message to EDX
+    call WriteString                                                                ; print message to screen
+    call ReadInt                                                                    ; read user input as integer
+    mov EBX, EAX                                                                    ; move input into EBX to store for later
+    mov EDX, OFFSET pinPrompt                                                       ; move enter pin message to EDX
+    call WriteString                                                                ; print message to screen
+    call ReadInt                                                                    ; read user input as integer
+    inc loginCounter                                                                ; increment login counter at each attempt
+    ret                                                                             ; return to after call location
 GetLoginDetails ENDP
+
 ;---------------------------------
 ValidateDetails PROC
-; takes EAX as pin, and EBX as account
+; Takes EAX as pin, and EBX as account
 ; number and verify that they have
 ; the same index position in PINS and
 ; accountNumbers respectively
 ; if valid, validDetails is set to 1
+; 
+; Receives: EAX, EBX as pin and account number
+; Returns: validDetails
 ;
-    PUSHAD              ; push values to stack
-    mov ECX, LENGTHOF accountNumbers 
-    mov ESI, OFFSET accountNumbers
-    mov sessionId, 0
+    PUSHAD                                                                          ; push values to stack
+    mov ECX, LENGTHOF accountNumbers                                                ; move length of accountNumbers to ECX
+    mov ESI, OFFSET accountNumbers                                                  ; move starting address of accountNumbers to ESI
+    mov sessionId, 0                                                                ; set sessionId (index identifier) to zero
 AccountNoChecker:
-    cmp EBX, DWORD PTR [ESI]
-    je Success
-    inc sessionId
-    add ESI, TYPE accountNumbers
-    loop AccountNoChecker
-    ; if loop fails
-    mov EDX, OFFSET invalidAccountMsg
-    call WriteString
-    call Crlf
-    jmp Finish
+    cmp EBX, DWORD PTR [ESI]                                                        ; each loop, compare user input to each account number
+    je Success                                                                      ; if equal, jump to success
+    inc sessionId                                                                   ; if not, increment sessionId value
+    add ESI, TYPE accountNumbers                                                    ; increment address value by type
+    loop AccountNoChecker                                                           ; loop for length of accountNumbers
+    mov EDX, OFFSET invalidAccountMsg                                               ; if end of loop is reached, move invalid account message to EDX
+    call WriteString                                                                ; write message to screen
+    call Crlf                                                                       ; print new line
+    jmp Finish                                                                      ; jump to Finish label
 Success:
-    ; check pin
-    mov ESI, OFFSET PINS
-    movzx ECX, sessionId
+    mov ESI, OFFSET PINS                                                            ; if account number valid, check pin matches, so move PINS address into ESI
+    movzx ECX, sessionId                                                            ; move sessionId (index) into ECX loop counter
 GetPin:
-    add ESI, TYPE PINS 
-    loop GetPin
-    cmp AX, WORD PTR [ESI]
-    je Valid
-    mov EDX, OFFSET wrongPinMsg
-    call WriteString
-    call Crlf
-    jmp Finish
+    add ESI, TYPE PINS                                                              ; increment address value on each loop
+    loop GetPin                                                                     ; loop until sessionId index value is reached
+    cmp AX, WORD PTR [ESI]                                                          ; check if this pin number matches the one entered by user
+    je Valid                                                                        ; if equal, jump to Valid label
+    mov EDX, OFFSET wrongPinMsg                                                     ; if not, move wrong pin message to EDX
+    call WriteString                                                                ; write message to screen
+    call Crlf                                                                       ; print new line
+    jmp Finish                                                                      ; jump to Finish label
 Valid:
     mov EDX, OFFSET validDetailsMsg
     call WriteString
@@ -159,8 +161,13 @@ ValidateDetails ENDP
 
 ;------------------------------
 MainMenu PROC
+; Prints main menu and processes user selection
+; by calling appropriate procedures
+;
+; Receives:
+; Returns:
+;
     PUSHAD
-
 PrintMenu:
     call WaitMsg                            ; allow user to control when to continue
     call Clrscr                             ; clear screen before printing menu each time
@@ -202,8 +209,13 @@ Quit:
     ret
 MainMenu ENDP
 
-;----------------------h
+;-----------------------------
 QuitMessage PROC
+; Prints quit message to screen
+;
+; Receives:
+; Returns:
+;
     PUSHAD
     mov EDX, OFFSET exitMsg
     call WriteString
@@ -215,10 +227,13 @@ QuitMessage ENDP
 
 ;-----------------------------
 GetBalance PROC
-; takes no parameters, but after
+; Takes no parameters, but after
 ; running, sets EAX to the users
 ; account balance, and sets ESI
 ; to their account value address
+;
+; Receives:
+; Returns: EAX, ESI as account balance, and account address
 ;
     movzx ECX, sessionId
     mov ESI, OFFSET Balances
@@ -231,8 +246,11 @@ GetBalance ENDP
 
 ;-------------------------------
 DisplayBalance PROC
-; gets users balance and prints
+; Gets users balance and prints
 ; it to screen, with message
+;
+; Receives:
+; Returns:
 ;
     PUSHAD    
     ; put balance value in EAX
@@ -248,11 +266,14 @@ DisplayBalance ENDP
 
 ;------------------------
 Withdraw PROC
-; prints withdrawal prompt
+; Prints withdrawal prompt
 ; gets users withdrawal value
 ; subs that value from current
 ; balance, then updates user
 ; balance with new value
+;
+; Receives:
+; Returns:
 ;
     PUSHAD
     cmp transactionCounter, TRANSLIMIT
@@ -298,6 +319,9 @@ Deposit PROC
 ; adds that value from current
 ; balance, then updates user
 ; balance with new value
+;
+; Receives:
+; Returns:
 ;
     PUSHAD
     cmp transactionCounter, TRANSLIMIT
@@ -394,8 +418,14 @@ GetAccountNumber:
     ret
 PrintReceipt ENDP
 
-;-----------------------
+;---------------------------------
 TransactionLimitExceeded PROC
+; Prints transaction limit reached error
+; message to screen
+;
+; Receives:
+; Returns:
+;
     PUSHAD
     mov EDX, OFFSET transLimitMsg
     call WriteString
