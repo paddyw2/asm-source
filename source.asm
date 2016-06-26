@@ -150,13 +150,13 @@ GetPin:
     call Crlf                                                                       ; print new line
     jmp Finish                                                                      ; jump to Finish label
 Valid:
-    mov EDX, OFFSET validDetailsMsg
-    call WriteString
-    call Crlf
-    mov validDetails, 1
+    mov EDX, OFFSET validDetailsMsg                                                 ; move valid details message into EDX
+    call WriteString                                                                ; write message to screen
+    call Crlf                                                                       ; print new line
+    mov validDetails, 1                                                             ; move 1 into validDetails to signify successful login
 Finish:
-    POPAD           ; restore values
-    ret
+    POPAD                                                                           ; restore register values
+    ret                                                                             ; return
 ValidateDetails ENDP
 
 ;------------------------------
@@ -167,46 +167,46 @@ MainMenu PROC
 ; Receives:
 ; Returns:
 ;
-    PUSHAD
+    PUSHAD                                                                          ; push register values to stack
 PrintMenu:
-    call WaitMsg                            ; allow user to control when to continue
-    call Clrscr                             ; clear screen before printing menu each time
+    call WaitMsg                                                                    ; print wait message - allow user to control when to continue
+    call Clrscr                                                                     ; clear screen before printing menu each time
     
-    mov EDX, OFFSET menuMsg
-    call WriteString
-    call Crlf
-    call ReadInt
-    cmp EAX, 1
-    je Option1
-    cmp EAX, 2
-    je Option2
-    cmp EAX, 3
-    je Option3
-    cmp EAX, 4
-    je Option4
-    cmp EAX, 5
-    je Quit
-    mov EDX, OFFSET invalidMenuInput
-    call WriteString
-    call Crlf
-    jmp PrintMenu
+    mov EDX, OFFSET menuMsg                                                         ; move menu options into EDX
+    call WriteString                                                                ; print menu options to screen
+    call Crlf                                                                       ; print new line
+    call ReadInt                                                                    ; read user input as integer
+    cmp EAX, 1                                                                      ; compare user input in EAX to 1
+    je Option1                                                                      ; if equal, jump to Option1 label
+    cmp EAX, 2                                                                      ; compare input to 2
+    je Option2                                                                      ; if equal jump to Option2
+    cmp EAX, 3                                                                      ; compare to 3
+    je Option3                                                                      ; if equal jump to Option3
+    cmp EAX, 4                                                                      ; compare to 4
+    je Option4                                                                      ; if equal jump to Option4
+    cmp EAX, 5                                                                      ; compare to 5
+    je Quit                                                                         ; if equal jump to Quit
+    mov EDX, OFFSET invalidMenuInput                                                ; if some other input, move invalid input message to EDX
+    call WriteString                                                                ; print message to screen
+    call Crlf                                                                       ; print new line
+    jmp PrintMenu                                                                   ; jump back to PrintMenu to clear screen and print options
 
 Option1:
-    call DisplayBalance
-    jmp PrintMenu
+    call DisplayBalance                                                             ; if input is 1, call DisplayBalance
+    jmp PrintMenu                                                                   ; return to menu
 Option2:
-    call Withdraw
-    jmp PrintMenu
+    call Withdraw                                                                   ; if input is 2, call Withdraw
+    jmp PrintMenu                                                                   ; return to menu
 Option3:
-    call Deposit
-    jmp PrintMenu
+    call Deposit                                                                    ; if input is 3, call Deposit
+    jmp PrintMenu                                                                   ; return to menu
 Option4:
-    call PrintReceipt
-    jmp PrintMenu
+    call PrintReceipt                                                               ; if input is 4, call PrintReceipt
+    jmp PrintMenu                                                                   ; return to menu
 Quit:
-
-    POPAD
-    ret
+                                                                                    ; if input is 5, do not return to menu
+    POPAD                                                                           ; restore register values
+    ret                                                                             ; return
 MainMenu ENDP
 
 ;-----------------------------
@@ -216,13 +216,13 @@ QuitMessage PROC
 ; Receives:
 ; Returns:
 ;
-    PUSHAD
-    mov EDX, OFFSET exitMsg
-    call WriteString
-    call Crlf
-    call WaitMsg
-    POPAD
-    ret
+    PUSHAD                                                                          ; push register values to stack
+    mov EDX, OFFSET exitMsg                                                         ; move exit message to EDX
+    call WriteString                                                                ; print message to screen
+    call Crlf                                                                       ; print new line
+    call WaitMsg                                                                    ; print wait message and wait for user input
+    POPAD                                                                           ; restore register values
+    ret                                                                             ; return
 QuitMessage ENDP
 
 ;-----------------------------
@@ -235,13 +235,13 @@ GetBalance PROC
 ; Receives:
 ; Returns: EAX, ESI as account balance, and account address
 ;
-    movzx ECX, sessionId
-    mov ESI, OFFSET Balances
+    movzx ECX, sessionId                                                            ; move sessionId into ECX with zero extension
+    mov ESI, OFFSET Balances                                                        ; move starting address of Balances into ESI
 FindBalance:
-    add ESI, TYPE Balances
-    loop FindBalance
-    mov EAX, DWORD PTR [ESI]
-    ret
+    add ESI, TYPE Balances                                                          ; each loop, add to address of Balances until desired index is reached
+    loop FindBalance                                                                ; loop back to FindBalances while ECX != 0
+    mov EAX, DWORD PTR [ESI]                                                        ; when index reached, move value into EAX
+    ret                                                                             ; return
 GetBalance ENDP
 
 ;-------------------------------
@@ -252,16 +252,14 @@ DisplayBalance PROC
 ; Receives:
 ; Returns:
 ;
-    PUSHAD    
-    ; put balance value in EAX
-    ; and put value address in ESI
-    call GetBalance
-    mov EDX, OFFSET balMsg
-    call WriteString
-    call WriteDec
-    call Crlf
-    POPAD
-    ret
+    PUSHAD                                                                          ; push register values to stack 
+    call GetBalance                                                                 ; call GetBalance procedure to get bal val in EAX and address in ESI
+    mov EDX, OFFSET balMsg                                                          ; move balance message into EDX
+    call WriteString                                                                ; print message to screen
+    call WriteDec                                                                   ; write EAX decimal value to screen
+    call Crlf                                                                       ; print new line
+    POPAD                                                                           ; restore register values
+    ret                                                                             ; return
 DisplayBalance ENDP
 
 ;------------------------
@@ -275,41 +273,39 @@ Withdraw PROC
 ; Receives:
 ; Returns:
 ;
-    PUSHAD
-    cmp transactionCounter, TRANSLIMIT
-    jnb TransactionLimit
-    mov EDX, OFFSET withdrawalPrompt
-    call WriteString
-    call ReadInt
-    mov EBX, EAX
-    call GetBalance    
-    cmp EBX, EAX
-    ja Error                                                    ; if withdrawal is greater than balance, generate error
-    cmp EBX, maxWithdrawalVal                                   ; if withdrawal greater than max withdrawal limit, generate error  
-    ja ErrorMax
-    ; bal value is in EAX, and address in ESI
-    sub EAX, EBX
-    add totalWithdrawn, EBX
-    ; mov new EAX value into array position
-    mov DWORD PTR [ESI], EAX    
-    inc transactionCounter
-    call DisplayBalance
-    jmp Finish
+    PUSHAD                                                                          ; push register values to stack
+    cmp transactionCounter, TRANSLIMIT                                              ; compare transactions so far with limit
+    jnb TransactionLimit                                                            ; if not below, jump to error TransactionLimit label
+    mov EDX, OFFSET withdrawalPrompt                                                ; move withdrawalPrompt message address to EDX
+    call WriteString                                                                ; print message to screen
+    call ReadInt                                                                    ; read user input as integer
+    mov EBX, EAX                                                                    ; save EAX by moving into EBX
+    call GetBalance                                                                 ; call GetBalance to get value into EAX and address into ESI
+    cmp EBX, EAX                                                                    ; compare balance with amount to withdraw
+    ja Error                                                                        ; if withdrawal is greater than balance, generate error
+    cmp EBX, maxWithdrawalVal                                                       ; if withdrawal greater than max withdrawal limit, generate error  
+    ja ErrorMax                                                                     ; jump to error label ErrorMax
+    sub EAX, EBX                                                                    ; if valid, subtract value from current balance
+    add totalWithdrawn, EBX                                                         ; sum totalWithdrawn value
+    mov DWORD PTR [ESI], EAX                                                        ; update balance with new total
+    inc transactionCounter                                                          ; increment transaction counter
+    call DisplayBalance                                                             ; call DisplayBalance
+    jmp Finish                                                                      ; jump to Finish label
 TransactionLimit:
-    call TransactionLimitExceeded
-    jmp Finish
+    call TransactionLimitExceeded                                                   ; call error label
+    jmp Finish                                                                      ; jump to Finish label
 ErrorMax:
-    mov EDX, OFFSET maxWithdrawalMsg
-    call WriteString
-    call Crlf
-    jmp Finish
+    mov EDX, OFFSET maxWithdrawalMsg                                                ; move error message into EDX
+    call WriteString                                                                ; print message to screen
+    call Crlf                                                                       ; print new line
+    jmp Finish                                                                      ; jump to Finish label
 Error:
-    mov EDX, OFFSET insufficientFunds
-    call WriteString
-    call Crlf
+    mov EDX, OFFSET insufficientFunds                                               ; move error message into EDX
+    call WriteString                                                                ; print message to screen
+    call Crlf                                                                       ; print new line
 Finish:
-    POPAD
-    ret
+    POPAD                                                                           ; restore register values
+    ret                                                                             ; return
 Withdraw ENDP
 
 ;------------------------
@@ -323,73 +319,78 @@ Deposit PROC
 ; Receives:
 ; Returns:
 ;
-    PUSHAD
-    cmp transactionCounter, TRANSLIMIT
-    jnb TransactionLimit
-    mov EDX, OFFSET depositMenuMsg
-    call WriteString
-    call Crlf
-    call ReadInt
-    cmp EAX, 1
-    je Cash
-    cmp EAX, 2
-    je Check
-    mov EDX, OFFSET invalidDepChoice
-    call WriteString
-    call Crlf
-    jmp Finish
+    PUSHAD                                                                          ; push register values to stack
+    cmp transactionCounter, TRANSLIMIT                                              ; check transaction limit is not reached
+    jnb TransactionLimit                                                            ; if it is, jump to error label
+    mov EDX, OFFSET depositMenuMsg                                                  ; move deposit menu message to EDX
+    call WriteString                                                                ; print message to screen
+    call Crlf                                                                       ; print new line
+    call ReadInt                                                                    ; read user input as integer
+    cmp EAX, 1                                                                      ; compare to 1
+    je Cash                                                                         ; if equal, jump to Cash option
+    cmp EAX, 2                                                                      ; compare to 2
+    je Check                                                                        ; if equal, jump to Check option
+    mov EDX, OFFSET invalidDepChoice                                                ; move error message to EDX
+    call WriteString                                                                ; print message to screen
+    call Crlf                                                                       ; print new line
+    jmp Finish                                                                      ; jump to Finish label
 
 TransactionLimit:
-    call TransactionLimitExceeded
-    jmp Finish
+    call TransactionLimitExceeded                                                   ; call error procedure
+    jmp Finish                                                                      ; jump to finish label
 Cash:
-    mov cashCheckDep, 1
-    mov EDX, OFFSET cashDepositMsg
-    call WriteString
-    call Crlf
-    jmp EnterValue
+    mov cashCheckDep, 1                                                             ; set user choice to 1
+    mov EDX, OFFSET cashDepositMsg                                                  ; move message into EDX
+    call WriteString                                                                ; print message to screen
+    call Crlf                                                                       ; print new line
+    jmp EnterValue                                                                  ; jump to EnterValue label
 Check:
-    mov cashCheckDep, 0
-    mov EDX, OFFSET checkDepositMsg
-    call WriteString
-    call Crlf
+    mov cashCheckDep, 0                                                             ; set user choice to 2
+    mov EDX, OFFSET checkDepositMsg                                                 ; move message to EDX
+    call WriteString                                                                ; print message to screen
+    call Crlf                                                                       ; print new line
 EnterValue:
-    mov EDX, OFFSET depositPrompt
-    call WriteString
-    call ReadInt
+    mov EDX, OFFSET depositPrompt                                                   ; move message to EDX
+    call WriteString                                                                ; print message to screen
+    call ReadInt                                                                    ; read user input as integer
 
     cmp cashCheckDep, 1
-    jne BalanceCalc                                                         ; jump to next step if not cash
-    mov enteredDeposit, EAX                                                 ; move entered amount into memory to accessed via pointers
-    PUSHAD                                                                  ; push eax register to stack to save value
-    mov DX, WORD PTR [enteredDeposit + 2]                                   ; move first part of EAX value into DX
-    mov AX, WORD PTR enteredDeposit                                         ; move seconds part into AX (note little endian)
-    mov BX, 10                                                              ; 10 is our divisor, so move into BX
-    div BX                                                                  ; perform division
-    cmp DX, 0                                                               ; if 10|EAX then remainder should be 0
-    POPAD                                                                   ; restore register values before any jumps occur
-    jne InvalidDenom                                                        ; if there is remainder, trigger error
+    jne BalanceCalc                                                                 ; jump to next step if not cash
+    mov enteredDeposit, EAX                                                         ; move entered amount into memory to accessed via pointers
+    PUSHAD                                                                          ; push eax register to stack to save value
+    mov DX, WORD PTR [enteredDeposit + 2]                                           ; move first part of EAX value into DX
+    mov AX, WORD PTR enteredDeposit                                                 ; move seconds part into AX (note little endian)
+    mov BX, 10                                                                      ; 10 is our divisor, so move into BX
+    div BX                                                                          ; perform division
+    cmp DX, 0                                                                       ; if 10|EAX then remainder should be 0
+    POPAD                                                                           ; restore register values before any jumps occur
+    jne InvalidDenom                                                                ; if there is remainder, trigger error
 BalanceCalc:
-    mov EBX, EAX
-    call GetBalance    
-    ; bal value is in EAX, and address in ESI
-    add EAX, EBX
-    add totalDeposited, EBX
-    ; mov new EAX value into array position
-    mov DWORD PTR [ESI], EAX
-    inc transactionCounter
-    call DisplayBalance
-    jmp Finish
+    mov EBX, EAX                                                                    ; store EAX value in EBX
+    call GetBalance                                                                 ; call GetBalance - bal value is in EAX, and address in ESI
+    add EAX, EBX                                                                    ; add balance and deposit
+    add totalDeposited, EBX                                                         ; sum total deposits
+    mov DWORD PTR [ESI], EAX                                                        ; update balance value 
+    inc transactionCounter                                                          ; increment transactions
+    call DisplayBalance                                                             ; print user balance
+    jmp Finish                                                                      ; jump to finish
 InvalidDenom:
-    mov EDX, OFFSET invalidDenomMsg
-    call WriteString
-    call Crlf
+    mov EDX, OFFSET invalidDenomMsg                                                 ; move message to EDX        
+    call WriteString                                                                ; print message to screen
+    call Crlf                                                                       ; print new line
 Finish:    
-    POPAD
-    ret
+    POPAD                                                                           ; restore register values
+    ret                                                                             ; return
 Deposit ENDP
 
+;------------------------------
 PrintReceipt PROC
+; Prints users receipt details
+; to screen
+;
+; Receives:
+; Returns:
+;
     PUSHAD
     mov EDX, OFFSET accountNumberMsg
     call WriteString
