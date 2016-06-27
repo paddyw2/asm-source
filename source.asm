@@ -391,32 +391,31 @@ PrintReceipt PROC
 ; Receives:
 ; Returns:
 ;
-    PUSHAD
-    mov EDX, OFFSET accountNumberMsg
-    call WriteString
-    movzx ECX, sessionId
-    mov ESI, OFFSET accountNumbers
+    PUSHAD                                                                          ; push register values to stack
+    mov EDX, OFFSET accountNumberMsg                                                ; move message to EDX register
+    call WriteString                                                                ; print message to screen
+    movzx ECX, sessionId                                                            ; move sessionId to ECX with zero extension
+    mov ESI, OFFSET accountNumbers                                                  ; move start of accountNumbers address to ESI
 GetAccountNumber:
-    add ESI, TYPE accountNumbers
-    loop GetAccountNumber
-    mov EAX, DWORD PTR [ESI]
-    call WriteDec
-    call Crlf
-    mov EDX, OFFSET totalWithdrawMsg
-    call WriteString
-    mov EAX, totalWithdrawn
-    call WriteDec
-    call Crlf
-    mov EDX, OFFSET totalDepositMsg
-    call WriteString
-    mov EAX, totalDeposited
-    call WriteDec
-    call Crlf
-    call DisplayBalance
+    add ESI, TYPE accountNumbers                                                    ; each loop, increment address to get to desired index
+    loop GetAccountNumber                                                           ; loop GetAccountNumber
+    mov EAX, DWORD PTR [ESI]                                                        ; move balance value into EAX
+    call WriteDec                                                                   ; print value to screen
+    call Crlf                                                                       ; print new line
+    mov EDX, OFFSET totalWithdrawMsg                                                ; move message to EDX
+    call WriteString                                                                ; print message to screen
+    mov EAX, totalWithdrawn                                                         ; move total withdrawn value to EAX
+    call WriteDec                                                                   ; print value to screen
+    call Crlf                                                                       ; print new line
+    mov EDX, OFFSET totalDepositMsg                                                 ; move message address to EDX
+    call WriteString                                                                ; print message to screen
+    mov EAX, totalDeposited                                                         ; move total deposited value to EAX
+    call WriteDec                                                                   ; print value to screen
+    call Crlf                                                                       ; print new line
+    call DisplayBalance                                                             ; call DisplayBalance procedure
 
-
-    POPAD
-    ret
+    POPAD                                                                           ; restore register values
+    ret                                                                             ; return
 PrintReceipt ENDP
 
 ;---------------------------------
@@ -427,11 +426,11 @@ TransactionLimitExceeded PROC
 ; Receives:
 ; Returns:
 ;
-    PUSHAD
-    mov EDX, OFFSET transLimitMsg
-    call WriteString
-    call Crlf
-    POPAD
-    ret
+    PUSHAD                                                                          ; push register values to stack
+    mov EDX, OFFSET transLimitMsg                                                   ; move message address to EDX
+    call WriteString                                                                ; print message to screen
+    call Crlf                                                                       ; print new line
+    POPAD                                                                           ; restore register values
+    ret                                                                             ; return
 TransactionLimitExceeded ENDP
 end main
